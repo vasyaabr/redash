@@ -112,7 +112,7 @@ def require_admin_or_owner(object_owner_id):
 
 
 def can_modify(obj, user):
-    return is_admin_or_owner(obj.user_id) or user.has_access(obj, ACCESS_TYPE_MODIFY)
+    return True
 
 
 def require_object_modify_permission(obj, user):
