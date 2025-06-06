@@ -4,6 +4,8 @@ from flask_login import current_user
 from flask_restful import abort
 from funcy import flatten
 
+from redash import models
+
 view_only = True
 not_view_only = False
 
@@ -15,10 +17,26 @@ ACCESS_TYPES = (ACCESS_TYPE_VIEW, ACCESS_TYPE_MODIFY, ACCESS_TYPE_DELETE)
 
 
 def has_access(obj, user, need_view_only):
+    if isinstance(obj, models.Query):
+        return has_access_to_query(obj, user, need_view_only)
     if hasattr(obj, "api_key") and user.is_api_user():
         return has_access_to_object(obj, user.id, need_view_only)
     else:
         return has_access_to_groups(obj, user, need_view_only)
+
+
+def has_access_to_query(query, user, need_view_only):
+    ds_ids = [query.data_source_id] + (query.additional_data_source_ids or [])
+    for ds_id in ds_ids:
+        if ds_id is None:
+            continue
+        try:
+            ds = models.DataSource.get_by_id(ds_id)
+        except models.NoResultFound:
+            continue
+        if has_access(ds, user, need_view_only):
+            return True
+    return False
 
 
 def has_access_to_object(obj, api_key, need_view_only):

@@ -404,6 +404,7 @@ QueryService.newQuery = function newQuery() {
     user: currentUser,
     options: { apply_auto_limit: localOptions.get("applyAutoLimit", true) },
     tags: [],
+    additional_data_source_ids: [],
     can_edit: true,
   });
 };

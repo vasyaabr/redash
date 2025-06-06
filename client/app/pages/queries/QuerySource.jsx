@@ -5,6 +5,7 @@ import cx from "classnames";
 import { useDebouncedCallback } from "use-debounce";
 import useMedia from "use-media";
 import Button from "antd/lib/button";
+import Alert from "antd/lib/alert";
 import routeWithUserSession from "@/components/ApplicationArea/routeWithUserSession";
 import Resizable from "@/components/Resizable";
 import Parameters from "@/components/Parameters";
@@ -108,23 +109,28 @@ function QuerySource(props) {
   };
 
   const handleDataSourceChange = useCallback(
-    dataSourceId => {
-      if (dataSourceId) {
+    ids => {
+      const [primaryId, ...additionalIds] = ids || [];
+      if (primaryId) {
         try {
-          localStorage.setItem("lastSelectedDataSourceId", dataSourceId);
+          localStorage.setItem("lastSelectedDataSourceId", primaryId);
         } catch (e) {
-          // `localStorage.setItem` may throw exception if there are no enough space - in this case it could be ignored
+          // ignore
         }
       }
-      if (query.data_source_id !== dataSourceId) {
-        recordEvent("update_data_source", "query", query.id, { dataSourceId });
+      if (
+        query.data_source_id !== primaryId ||
+        JSON.stringify(query.additional_data_source_ids || []) !== JSON.stringify(additionalIds)
+      ) {
+        recordEvent("update_data_source", "query", query.id, { dataSourceId: primaryId });
         const updates = {
-          data_source_id: dataSourceId,
+          data_source_id: primaryId,
+          additional_data_source_ids: additionalIds,
           latest_query_data_id: null,
           latest_query_data: null,
         };
         setQuery(extend(query.clone(), updates));
-        updateQuery(updates, { successMessage: null }); // show message only on error
+        updateQuery(updates, { successMessage: null });
       }
     },
     [query, setQuery, updateQuery]
@@ -136,9 +142,13 @@ function QuerySource(props) {
       const firstDataSourceId = dataSources.length > 0 ? dataSources[0].id : null;
       const selectedDataSourceId = parseInt(localStorage.getItem("lastSelectedDataSourceId")) || null;
 
-      handleDataSourceChange(
-        chooseDataSourceId([query.data_source_id, selectedDataSourceId, firstDataSourceId], dataSources)
-      );
+      handleDataSourceChange([
+        chooseDataSourceId([
+          query.data_source_id,
+          selectedDataSourceId,
+          firstDataSourceId,
+        ], dataSources),
+      ]);
     }
   }, [query.data_source_id, queryFlags.isNew, dataSourcesLoaded, dataSources, handleDataSourceChange]);
 
@@ -204,6 +214,13 @@ function QuerySource(props) {
           onChange={setQuery}
         />
       </div>
+      <div className="container w-100 p-b-10">
+        <Alert
+          type="info"
+          message="Выполняется на первом источнике; доступ получат все, у кого есть права хотя бы на один"
+          showIcon
+        />
+      </div>
       <main className="query-fullscreen">
         <Resizable direction="horizontal" sizeAttribute="flex-basis" toggleShortcut="Alt+Shift+D, Alt+D">
           <nav>
@@ -212,7 +229,7 @@ function QuerySource(props) {
                 <DynamicComponent
                   name={"QuerySourceDropdown"}
                   dataSources={dataSources}
-                  value={dataSource ? dataSource.id : undefined}
+                  value={[query.data_source_id].concat(query.additional_data_source_ids || [])}
                   disabled={!queryFlags.canEdit || !dataSourcesLoaded || dataSources.length === 0}
                   loading={!dataSourcesLoaded}
                   onChange={handleDataSourceChange}

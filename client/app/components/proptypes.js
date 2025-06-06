@@ -52,6 +52,7 @@ export const Query = PropTypes.shape({
   name: PropTypes.string.isRequired,
   description: PropTypes.string,
   data_source_id: PropTypes.any.isRequired,
+  additional_data_source_ids: PropTypes.array,
   created_at: PropTypes.string.isRequired,
   updated_at: PropTypes.string,
   user: UserProfile,

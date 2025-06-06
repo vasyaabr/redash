@@ -47,6 +47,32 @@ class TestHasAccess(BaseTestCase):
 
         self.assertTrue(has_access(query, user, view_only))
 
+
+class TestQueryMultipleSources(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.group_b = self.factory.create_group()
+        self.group_c = self.factory.create_group()
+        self.ds_primary = self.factory.create_data_source()
+        self.ds_secondary = self.factory.create_data_source(group=self.group_b)
+        self.ds_third = self.factory.create_data_source(group=self.group_c)
+        self.query = self.factory.create_query(
+            data_source=self.ds_primary,
+            additional_data_source_ids=[self.ds_secondary.id, self.ds_third.id],
+        )
+
+    def test_access_with_primary_only(self):
+        user = self.factory.user  # has access to primary
+        self.assertTrue(has_access(self.query, user, view_only))
+
+    def test_access_with_secondary_only(self):
+        user = self.factory.create_user(group_ids=[self.group_b.id])
+        self.assertTrue(has_access(self.query, user, view_only))
+
+    def test_denied_without_any(self):
+        user = self.factory.create_user(group_ids=[self.factory.create_group().id])
+        self.assertFalse(has_access(self.query, user, view_only))
+
     def test_doesnt_allow_access_to_query_by_different_api_key(self):
         query = self.factory.create_query()
         other_query = self.factory.create_query()

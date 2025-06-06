@@ -267,10 +267,12 @@ class QueryResultResource(BaseResource):
             should_apply_auto_limit = query.options.get("apply_auto_limit", False)
 
         if has_access(query, self.current_user, allow_executing_with_view_only_permissions):
+            _data_source_ids = [query.data_source_id] + (query.additional_data_source_ids or [])
+            primary_source = query.data_source
             return run_query(
                 query.parameterized,
                 parameter_values,
-                query.data_source,
+                primary_source,
                 query_id,
                 should_apply_auto_limit,
                 max_age,

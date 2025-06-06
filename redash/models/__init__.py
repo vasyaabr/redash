@@ -449,6 +449,12 @@ class Query(ChangeTrackingMixin, TimestampMixin, BelongsToOrgMixin, db.Model):
     org = db.relationship(Organization, backref="queries")
     data_source_id = Column(key_type("DataSource"), db.ForeignKey("data_sources.id"), nullable=True)
     data_source = db.relationship(DataSource, backref="queries")
+    additional_data_source_ids = Column(
+        MutableList.as_mutable(ARRAY(key_type("DataSource"))),
+        default=list,
+        nullable=False,
+        server_default="{}",
+    )
     latest_query_data_id = Column(key_type("QueryResult"), db.ForeignKey("query_results.id"), nullable=True)
     latest_query_data = db.relationship(QueryResult)
     name = Column(db.String(255))
@@ -789,6 +795,17 @@ class Query(ChangeTrackingMixin, TimestampMixin, BelongsToOrgMixin, db.Model):
             return {}
 
         return self.data_source.groups
+
+    def allowed_groups(self):
+        ids = [self.data_source_id] + (self.additional_data_source_ids or [])
+        groups = {}
+        for ds_id in ids:
+            if ds_id is None:
+                continue
+            ds = DataSource.get_by_id(ds_id)
+            for gid, view_only in ds.groups.items():
+                groups[gid] = groups.get(gid, True) and view_only
+        return groups
 
     @hybrid_property
     def lowercase_name(self):
