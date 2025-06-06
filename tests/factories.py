@@ -87,6 +87,7 @@ query_factory = ModelFactory(
     is_draft=False,
     schedule=None,
     data_source=data_source_factory.create,
+    additional_data_source_ids=[],
     org_id=1,
 )
 
@@ -100,6 +101,7 @@ query_with_params_factory = ModelFactory(
     is_draft=False,
     schedule={},
     data_source=data_source_factory.create,
+    additional_data_source_ids=[],
     org_id=1,
 )
 

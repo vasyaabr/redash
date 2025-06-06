@@ -221,6 +221,10 @@ class QueryListResource(BaseQueryListResource):
         require_access(data_source, self.current_user, not_view_only)
         require_access_to_dropdown_queries(self.current_user, query_def)
 
+        additional_ids = query_def.pop("additional_data_source_ids", [])
+        if not isinstance(additional_ids, list) or not all(isinstance(i, int) for i in additional_ids):
+            abort(400, message="additional_data_source_ids must be a list of integers")
+
         for field in [
             "id",
             "created_at",
@@ -234,6 +238,7 @@ class QueryListResource(BaseQueryListResource):
         query_def["query_text"] = query_def.pop("query")
         query_def["user"] = self.current_user
         query_def["data_source"] = data_source
+        query_def["additional_data_source_ids"] = additional_ids
         query_def["org"] = self.current_org
         query_def["is_draft"] = True
         query = models.Query.create(**query_def)
@@ -350,6 +355,12 @@ class QueryResource(BaseResource):
         if "data_source_id" in query_def:
             data_source = models.DataSource.get_by_id_and_org(query_def["data_source_id"], self.current_org)
             require_access(data_source, self.current_user, not_view_only)
+
+        additional_ids = query_def.get("additional_data_source_ids")
+        if additional_ids is not None:
+            if not isinstance(additional_ids, list) or not all(isinstance(i, int) for i in additional_ids):
+                abort(400, message="additional_data_source_ids must be a list of integers")
+            query_def["additional_data_source_ids"] = additional_ids
 
         query_def["last_modified_by"] = self.current_user
         query_def["changed_by"] = self.current_user

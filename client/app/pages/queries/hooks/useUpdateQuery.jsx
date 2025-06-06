@@ -92,6 +92,7 @@ export default function useUpdateQuery(query, onChange) {
           "description",
           "name",
           "data_source_id",
+          "additional_data_source_ids",
           "options",
           "latest_query_data_id",
           "is_draft",

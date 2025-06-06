@@ -110,6 +110,7 @@ def serialize_query(
         "updated_at": query.updated_at,
         "created_at": query.created_at,
         "data_source_id": query.data_source_id,
+        "additional_data_source_ids": query.additional_data_source_ids,
         "options": query.options,
         "version": query.version,
         "tags": query.tags or [],
